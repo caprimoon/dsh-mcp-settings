@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "MCP servers",
+    "description": "A Settings page for the mcp-manager fleet: list every MCP server with its live connection state and tool count, then add, edit, enable, test, restart or delete one. Every write goes through the Host settings document into the active profile's cordis.patch.yml (mcp-manager → config.servers), so servers survive a restart and take effect live: a new entry mounts at once, an edited one is rebuilt, and disabling one unmounts its instance while keeping the entry. Secrets stay as ${credential:NAME} references — the form never stores a key."
+  }
+}

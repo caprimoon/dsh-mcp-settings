@@ -1,0 +1,5 @@
+# This bundle only adds a Client settings page; the Host half is an empty shell
+# so the row exists and the Client half gets served.
+- insert:
+    - id: mcp-settings
+      name: '@caprimoon/dsh-mcp-settings'

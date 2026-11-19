@@ -1,0 +1,9 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- One rack of three server slots, each with its own status light: the
+       mcp-manager fleet this page manages. -->
+  <rect x="6.5" y="5.5" width="23" height="25" rx="4.5" stroke="#4A7FB5" stroke-width="2.2"/>
+  <path d="M6.5 13.5h23M6.5 21.5h23" stroke="#4A7FB5" stroke-width="2.2"/>
+  <circle cx="25.6" cy="9.5" r="1.8" fill="#4E9E6B"/>
+  <circle cx="25.6" cy="17.5" r="1.8" fill="#4A7FB5" fill-opacity="0.45"/>
+  <circle cx="25.6" cy="25.5" r="1.8" fill="#4A7FB5" fill-opacity="0.45"/>
+</svg>
