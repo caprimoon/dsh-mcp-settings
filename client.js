@@ -97,6 +97,7 @@ window.__ModuleLoader__.load({
       fieldToolCallTimeout: 'Tool-call timeout (ms)',
       fieldTimeoutHint: 'Blank keeps the mcp-client default. Raise the startup timeout for a first `npx` run (60000 is a good start).',
       placeholderDefault: 'default',
+      fillExample: 'Fill in the chrome-devtools example',
       templateHint: 'Any value here may reference a stored credential as ${credential:NAME}; only the reference is saved.',
       errNameRequired: 'A name is required.',
       errNamePattern: 'Use 1–32 characters from A–Z, a–z, 0–9, _ and -.',
@@ -190,6 +191,7 @@ window.__ModuleLoader__.load({
       fieldToolCallTimeout: '工具调用超时（毫秒）',
       fieldTimeoutHint: '留空则沿用 mcp-client 默认值。首次用 npx 拉包时建议把启动超时调到 60000。',
       placeholderDefault: '默认',
+      fillExample: '填入 chrome-devtools 示例',
       templateHint: '这里的取值都可以写成 ${credential:名字} 引用已保存的凭据；表单只保存引用本身。',
       errNameRequired: '需要填一个名字。',
       errNamePattern: '名字只能是 A–Z、a–z、0–9、_ 和 -，长度 1–32。',
@@ -293,6 +295,43 @@ window.__ModuleLoader__.load({
         startupTimeoutMs: '',
         toolCallTimeoutMs: '',
       }
+    }
+
+    /**
+     * The chrome-devtools example: the npx command that hands this deployment a
+     * real browser (Chrome DevTools MCP) to drive, with the budgets such a first
+     * run needs. Filled into the add form so a new user has a working entry in
+     * one click instead of guessing the package name.
+     * @param name - an unused key (see {@link uniqueName}).
+     * @returns the draft.
+     */
+    function exampleDraft(name) {
+      return {
+        ...emptyDraft(),
+        name,
+        command: 'npx',
+        args: 'chrome-devtools-mcp@latest\n--autoConnect',
+        startupTimeoutMs: '60000',
+        toolCallTimeoutMs: '120000',
+      }
+    }
+
+    /**
+     * First free key for an example, so filling it never collides with an entry
+     * that already exists (the shipped one is often already called
+     * `chrome-devtools`).
+     * @param base - the preferred key.
+     * @param taken - keys already configured, registered, or listed by the manager.
+     * @returns the base key or the first `base-2`, `base-3`, … that is free.
+     */
+    function uniqueName(base, taken) {
+      if (!taken.includes(base)) return base
+      for (let index = 2; index < 100; index += 1) {
+        const suffix = `-${index}`
+        const candidate = `${base.slice(0, 32 - suffix.length)}${suffix}`
+        if (!taken.includes(candidate)) return candidate
+      }
+      return base
     }
 
     /**
@@ -587,7 +626,7 @@ window.__ModuleLoader__.load({
 
     /** Add/edit form for one server entry. */
     function ServerEditor(props) {
-      const { t, draft, onChange, onCancel, onSave, busy, error, isNew, canRename } = props
+      const { t, draft, onChange, onCancel, onSave, busy, error, isNew, canRename, onFillExample } = props
       const root = React.useRef(null)
       useEffect(() => {
         // The add form renders below the list, so bring it into view when it opens.
@@ -602,7 +641,13 @@ window.__ModuleLoader__.load({
       return h('form', { className: 'dms-editor', ref: root, onSubmit: submit, noValidate: true },
         h('div', { className: 'dms-editorHead' },
           h('span', { className: 'dms-editorTitle' },
-            isNew ? t('addTitle') : format(t('editTitle'), { name: draft.name.trim() || '—' }))),
+            isNew ? t('addTitle') : format(t('editTitle'), { name: draft.name.trim() || '—' })),
+          isNew && typeof onFillExample === 'function' ? h('button', {
+            type: 'button',
+            className: 'dms-linkButton',
+            disabled: busy,
+            onClick: onFillExample,
+          }, t('fillExample')) : null),
         h('div', { className: 'dms-grid' },
           h(Field, {
             label: t('fieldName'),
@@ -917,6 +962,18 @@ window.__ModuleLoader__.load({
         setEditing({ original: null, canRename: true, draft: emptyDraft() })
       }
 
+      /**
+       * Fill the open add form with the chrome-devtools example. The key is
+       * picked from the keys this page already knows about, so the example never
+       * collides with an entry that is already called `chrome-devtools`.
+       */
+      const fillExample = () => {
+        setEditorError(null)
+        setEditing((current) => (current === null
+          ? current
+          : { ...current, draft: exampleDraft(uniqueName('chrome-devtools', rowNames)) }))
+      }
+
       const renderRow = (row) => {
         const entry = row.entry
         const hasEntry = isRecord(entry)
@@ -1042,6 +1099,7 @@ window.__ModuleLoader__.load({
             onChange: (draft) => setEditing({ ...editing, draft }),
             onCancel: () => { setEditing(null); setEditorError(null) },
             onSave: () => { void saveDraft() },
+            onFillExample: fillExample,
             busy: busyWith('save', ''),
             error: editorError,
             isNew: true,
@@ -1114,8 +1172,12 @@ window.__ModuleLoader__.load({
 .dms-emptyTitle{margin:0;font-size:13px;line-height:20px;color:var(--dsw-alias-label-secondary)}
 .dms-addCard,.dms-editor{border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-module-platform);padding:14px 16px;display:flex;flex-direction:column;gap:14px}
 .dms-addCard .dms-editor{background:none;padding:0}
-.dms-editorHead{display:flex;align-items:baseline;gap:8px}
+.dms-editorHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .dms-editorTitle{font-size:14px;line-height:22px;font-weight:500;color:var(--dsw-alias-label-primary)}
+.dms-linkButton{box-sizing:border-box;display:inline-flex;align-items:center;height:24px;padding:0 8px;margin-left:auto;border:none;border-radius:var(--dsw-radius-sm);background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:12px;line-height:18px;cursor:pointer}
+.dms-linkButton:disabled{opacity:0.4;cursor:default}
+.dms-linkButton:focus-visible{outline:none;box-shadow:0 0 0 2px var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary))}
+@media (hover:hover){.dms-linkButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}}
 .dms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px}
 @media (max-width:560px){.dms-grid{grid-template-columns:minmax(0,1fr)}}
 .dms-field{display:flex;flex-direction:column;gap:6px;min-width:0}
